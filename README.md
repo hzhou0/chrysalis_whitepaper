@@ -1,7 +1,5 @@
 # Chrysalis Token Whitepaper
 
-[toc]
-
 ## Introduction
 
 ### Background
