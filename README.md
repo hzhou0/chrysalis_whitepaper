@@ -12,62 +12,71 @@ This outcome results from the insufficient performance of current cryptocurrenci
 
 The purpose of the Chrysalis token is to create a protocol for representing arbitrary tokens with the lowest possible overhead while obscuring the identity of parties involved in any transactions. This is accomplished by localizing the history of state to each cryptographically secure token while excluding any information about the addresses involved. Owners of Chrysalis would only need to store the private keys and histories of tokens they currently hold instead of a history of every transaction in the network. Transacting with Chrysalis is simply a matter of transferring private keys to the receiver and verifying against the token mint or any other persistent aggregators in the network. The Chrysalis protocol also makes it possible for anyone to minting tokens and back them with any asset requiring only a single lightweight network validation node.
 
-## Ledger
+## Tokens
 
-### Tokens
+In the Chrysalis protocol, the state is composed of **tokens**. Tokens are created by **mints** as an asymmetric key pair and represents a contract between the mint and the owner to the exchange of some asset on token **purchase** or **settlement**. Each token, including its constituent contract, is cryptographically signed by the mint and may be legally voidable. Ownership of a specific token is defined as the possession of its private key. 
 
-In the Chrysalis protocol, the state is composed of **tokens**. Tokens are created by mints in collections called **mintings**. A **minting** represents a contract between the mint and the purchaser of the token where the mint guarantees each token is backed by an amount of some external asset. Note that the legal status of these guarantees is not governed by the protocol and may depend on jurisdiction. Only buy from trusted mints. 
+Tokens assume two forms: **hashed** and **complete**. 
 
-Issues as broadcasted by the mint contains the following fields (Figure 1):
-
-- The **mint**, the public key of the mint
-- The **root hash**, the top hash of the Merkle tree constructed from all tokens in the minting
-- The **contract hash**, the hash of the backing guarantee for tokens in the minting. The owner of the token should keep a copy of the guarantee. 
-- The **signature**, the content of the minting signed by the mint
-- The **divisible** flag, which specifies if the tokens in the minting can be split and joined with each other. Set to false for unique assets such as NFTs. 
-
-```json
-"minting": {
-    "mint": "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEpbjW9ZMr4mJzqgDldbmbU7VoKKrjC0T6NB+4lrHrj2k44IyIyKDzbzRrGboLy6qg/whS/vwFjHKFal2CAUn+oQ==",
-    "root_hash": "70176124abd98d92abaaeeb88c51ff0d7822982f53d35fd231198391078acabb",
-    "contract_hash": "50e721e49c013f00c62cf59f2163542a9d8df02464efeb615d31051b0fddc326",
-    "signature": "MEUCIBPbT8LCUqKo39WMU66SCXfcalQ7zj25n77CAq/eZHiIAiEAkN+rq+AW4k7J3eE1oeWTtZEZ2DB1z5I2esAe8RMkoXg=",
-    "divisible": true
-}
-```
-
-*Figure 1: Issue structure*
-
-Tokens contain the following fields (Figure 2):
+Complete tokens are used to assert ownership of a token. Complete tokens are only used by the mint to prove **settlement**, as they contain its full history and are consequently space inefficient. Complete tokens contains the following fields (Figure 1):
 
 - The **public key**
-- The **ancestor key**, the initial public key as created by the mint
-- The **history**, a recursive hash representing all transformations enacted on the token. Computed as `history=Hash(history+pub)`
-- The **data**, a field for read-only arbitrary data.
-- The **value**, a positive integer representing the value of the token. For indivisible tokens this value is always implicitly `1`. 
+- The **proof**, the new public key signed with the current private key
+- The **signature**, created by the mint signing the public key to attest token validity
+- The **parent**, the direct predecessor of the token. It contains a reference to its parent, thereby tracing the full history of the token.
+- The **data**, a field for read-only arbitrary data that was created with the token.
+- The **value**, a positive integer representing the value of the token. For indivisible tokens this value is always `1`. 
 
 ```json
 "token": {
-    "pub":
-"MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEW0C5GSsEnYS/QQknIlNZxb/zGE0Rgteud0JSrpa7Lyi7DPqKuSdMWEwTx+z8LjGhVpFKZHWJo/q1w6svXOt2qg==",
-    "ancestor": "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEpbjW9ZMr4mJzqgDldbmbU7VoKKrjC0T6NB+4lrHrj2k44IyIyKDzbzRrGboLy6qg/whS/vwFjHKFal2CAUn+oQ==",
-    "history": "1a48baa4a49846e8cbc26978ae3bcce43373c422d906a7ab70bf9a70b7ce0489",
-    "data": {},
-    "value": 100,
+    "pub":"KJV5Uz/bApcUAUHzAdSwG1oflFsbVG0RD3LEu+QB/PE=",
+    "proof":"L0qxENuCuuonVMz+VP7xTDki4JlQLTNhR0xFblkgDhxFhOIaPnHLuUZfzyQSkNlPsiMXmco+BX7TpQbFYjszBA==",
+    "signature": "/uzySnOkg2q5agHFfFGw+t7/c26o2eEygQA1M1/ovY9U5KnbjZ/m6x1AVFiKFPOjTMOTdrI4QnzcmaaHSFZXDw==",
+    "data": "",
+    "value": 1,
+    "parent": {
+        "pub": "uBuhQqW30CYDjD3ke6KPz/oJ2tTjgzfaakXDg1Hjs1M=",
+        "signature": "LOjnTH9oSnkjYs6mrwaLFqdc079x+B2W+uqczxkn4Mui03ZupyLDulEm/YN6RXJ3AbdDpg9WOHAAYj7joxXFAQ==",
+        "proof": "578LgCS7mlRJ2GByA2Za/gu7b/9HNQGYpgtgWrDR6PsnbSTomhrw/ggMoRau+hibwq/cJGgfklhoCZOR8vk4BQ==",
+        "data": "",
+        "value": 2,
+        "parent": null
+    },
 }
 ```
 
-*Figure 2: token structure*
+*Figure 1: token structure*
 
-Ownership of a specific token is defined as possessing its private key.  A token can be determined to belong to a minting by obtaining the minting's Merkle tree from the seller or other source and verifying it against the root hash provided by the mint. This data structure guarantees that the size of the token is constant regardless of how many times it has been transacted.
+Hashed tokens are used to verify the validity of a token in metamorphosis. Their space requirements do not scale with history. Hashed tokens contain the following fields (Figure 2):
 
-### Transactions
+- The **public key**
+- The **proof**
+- The **signature**
+- The **ancestor key**, the initial public key as created by the mint
+- The **history**, a recursive hash representing all metamorphoses enacted on the token. Computed as `history=Hash(history ⧺ pub)`, where ⧺ denotes concatenation.
+- The **height**, a positive integer equal to the number of metamorphoses enacted on the token. 
+- The **data**, a field for read-only arbitrary data.
+- The **value**, a positive integer representing the value of the token. For indivisible tokens this value is always `1`. 
 
-The basis of ownership being defined as the possession of the token's private key allows means that all parties with this key share ownership of the token. This is expected behavior and enables fund sharing between trusted parties. For operations that are transactional or when a private key is suspected to be exposed, token owners can execute a **metamorphosis** operation to reestablish sole ownership of a token.
+```json
+"token": {
+    "pub":"KJV5Uz/bApcUAUHzAdSwG1oflFsbVG0RD3LEu+QB/PE=",
+    "proof":"L0qxENuCuuonVMz+VP7xTDki4JlQLTNhR0xFblkgDhxFhOIaPnHLuUZfzyQSkNlPsiMXmco+BX7TpQbFYjszBA==",
+    "signature": "/uzySnOkg2q5agHFfFGw+t7/c26o2eEygQA1M1/ovY9U5KnbjZ/m6x1AVFiKFPOjTMOTdrI4QnzcmaaHSFZXDw==",
+    "data": "",
+    "value": 1.5,
+    "history": "982d9e3eb996f559e633f4d194def3761d909f5a3b647d1a851fead67c32c9d1",
+    "height": 19
+}
+```
 
-#### Metamorphosis
+## Transactions
 
-Metamorphosis executes a key change on a token. The operation requires a signature of the current canonical token(s) as input. When multiple metamorphoses are broadcasted involving the same parent token, the first to reach the network is considered canonical. 
+### Metamorphosis
+
+The basis of ownership being defined as the possession of the token's private key allows all parties with this key to share ownership of the token. This is expected behavior and enables fund sharing between trusted parties. Token owners can execute a **metamorphosis** operation to re-establish sole ownership of a token.
+
+Metamorphosis executes a key change on a token. The operation requires a signature of the current canonical token(s) as input and returns a signature of the new token as output. When multiple metamorphoses are broadcasted involving the same parent token, only one will be approved. Consequently, there is only one canonical lineage tree for each token.
 
 ##### Indivisible Tokens
 
@@ -98,68 +107,49 @@ Metamorphosis for divisible tokens consists of the following steps:
 
 The metamorphosis will then be either rejected or confirmed by the network. If the operation is confirmed, then the party that executed it will have sole ownership and the new token(s) will be recognized as the canonical descendant of its ancestor key. If the operation is rejected, then the token has already been transacted. For this reason, only consider a transaction verified if a metamorphosis on all tokens involved succeeds.
 
-#### Incomplete Transactions
+##### Incomplete Transactions
 
-When transactions involve multiple tokens, it is for metamorphosis to be successful for some but not all tokens. If atomicity is a priority, the recipient could employ the following procedure to make multi-spend attacks much less likely to succeed.
+When transactions involve multiple tokens, it is possible for metamorphosis to be successful for some but not all tokens. If atomicity is a priority, the recipient could employ the following procedure to make multi-spend attacks much less likely to succeed.
 
 1. Precompute metamorphoses
 2. Wait a pseudorandom amount of time after private keys are received
 3. Check that the provided tokens are still valid
 4. Broadcast prepared metamorphoses 
 
-This procedure ensures that the attacker must broadcast at the exact same network time block as the legitimate recipient. 
+This procedure ensures that the attacker must broadcast at nearly the same time as the legitimate recipient.
+
+##### Re-issuing
+
+When a metamorphosis operation is executed on a token with an excessively long history, the mint may settle the token and return a newly created token with the same contract and value at its discretion. This re-issuing allows the mint to truncate history to preserve space.
+
+### Settlement
+
+The settlement transaction is an exchange of a valid token and its private key signature with some asset stipulated in the token's constituent contract. The mint is required to make this transfer to any party presenting a token bearing its signature, unless it can disprove that the token is not the canonical descendant or the token's lineage has already been settled. 
+
+To prove the token is not the canonical descendant, the token is required in its complete form. To prove prior settlement, the complete token must be timestamped from a time stamp authority as specified in *RFC 3161*, or be included in a prior **settlement block**.
+
+A settlement block is a collection of tokens that have been settled. The block is presented as a Merkle tree where leaf nodes are tokens. A complete block features complete tokens as leaf nodes, whereas hash blocks features hash tokens. The block is signed by the mint. Settlement block broadcasts must adhere to the following constraints:
+
+1. Blocks must be signed by the mint
+2. Complete blocks must be broadcasted for a interval specified in the contract, usually around a month
+3. Hash blocks must be available upon request until the contract ceases to be valid
+4. For each broadcast interval, there must be at most one settlement block
+
+## Consensus
+
+The Chrysalis protocol operates under a proof of fraud model; mints are trusted by default, but malicious behavior will always be discovered by a subsequent transaction and are cryptographically indisputable. Furthermore, in-network penalties proportional to the infraction will manifest as an effect of the token contracts. Infractions can be shared between transactors and will heavily damage the reputation of the mints.
+
+### Fraud Conditions
+
+Chrysalis protocol requires the mint's signature on all transactions, which cryptographically proves the mint's approval of the transaction. Therefore, the mint is not able to defraud the network by subtracting transactions. The only viable attack would be to add invalid metamorphosis and settlement transactions. Chrysalis invalidates these attacks by placing the burden of proof on the mint. The token contracts specify that the mint must accept all settlement transactions unless it can prove the token has already been settled or the token is no longer valid. If the mint approves multiple metamorphoses on the same token, all created tokens will be valid. Consequently, the mint will have to payout during settlement. Likewise, if the mint creates multiple settlement broadcasts in the same interval, all offending broadcasts will be invalidated. The tokens in the broadcast will not be settled and the mint will have to execute another payout.
+
+### Proofs
+
+Multiple metamorphoses does not require a proof; the mint will silently approve the duplicate settlements, as it is unable to provide a proof of prior settlement or token invalidity. To prove duplicate settlement broadcasts, the transactor needs to knowledge of all past hashed settlement broadcasts.
 
 ## Network
 
-The Chrysalis network uses an unstructured protocol to guarantee network transparency and defend against eclipse attacks. This also allows auditor nodes to ensure the mint node is behaving correctly.
-
-### Nodes
-
-There are 3 types of nodes on the Chrysalis network. 
-
-- Transaction nodes. These short lived nodes broadcast metamorphoses and wait for confirmation.
-- Auditor nodes. These nodes aggregate received metamorphoses and participate in the confirmation process.
-- Issuer nodes. These mint-operated nodes aggregate received metamorphoses and lead the confirmation process. For every minting there must be exactly one mint node.
-
-### Blocks
-
-The Chrysalis network processes transactions by the block. Blocks are intervals of approximately constant time encoded as the output of a **VDF** which references the previous block. During a given block, the auditor and mints aggregate received requests into a candidate list and signs it with the block hash. Simultaneously, the mint merges all candidate lists from the previous block given by auditors with its own, then computes and broadcasts the list of all valid descendants. The auditor nodes compare this output with their own merged lists to check for discrepancy. Any malicious behavior from the mint such as attempts to exclude valid operations can be cryptographically proven using its last broadcast. 
-
-### Confirmation
-
-The validity of a given metamorphosis is given by the following algorithm, which is executed by auditors and mints:
-
-1. Check that the ancestor token belongs to this minting
-2. Check that the history is [well-formed](####Metamorphosis) 
-3. Check that there is not another metamorphosis with the same ancestor token in this block
-4. If there is a proof of work requirement for descendants of this ancestor, verify it.
-
-### Proof of Work
-
-Every single metamorphosis broadcast must include a proof of work that is derived from the history of its constituent tokens. This proof of work is used to prevent network congestion and defend against DDoS-class attacks, and should take around 5-10 seconds for a typical device. For divisible tokens, each output token must include its own proof of work to discourage frivolous token splitting.
-
-### Block State Broadcast Object
-
-The state broadcast at the end of the each block consists of the following:
-
-- The **Block**, a hash of the VDF output representing the current block
-- The **Tokens**, a list of the canonical descendants for each token in the minting
-- The **Proof of work target**, a table of proof of work targets for ancestor nodes. Nodes are represented by their hashes.
-
-```json
-"state": {
-    "block": "75d527c368f2efe848ecf6b073a36767800805e9eef2b1857d5f984f036eb6df891d75f72d9b154518c1cd58835286d1da9a38deba3de98b5a53e5ed78a84976",
-    "tokens": [],
-    "pow_targets": { 
-    	"4538aacc6ccae167eb462bd2d6ced3537edf6f8d88af709be7b130c0": 14000,
-    	"ed79d646f40c12ee61f863054409241d26dd803ee0300aadda2e2d25": 200000
-	}
-}
-```
-
-*Figure 3: state structure*
-
-Unlike a typical blockchain implementation, only the last state object is needed to compute the current state. As the tokens are of constant size, the state for any particular minting has a constant space requirement, which makes auditor nodes runnable on almost any device. Therefore, there would be sufficient auditors to secure the network from malicious mint activities even without financial incentives.
+The Chrysalis protocol specifies that each mint runs its own endpoints. These endpoints would compose a federated network which utilizes the same protocol but are not interconnected. Cross-mint transactions occur as simple exchanges of key pairs without the need of bridges. To prevent network congestion, mints can require a proof of work on all requests made to the endpoints. For divisible tokens, each output token can include its own proof of work to discourage frivolous token splitting. Transactors can also connect with each other to form a distributed hash table to share fraud proofs and prior settlement broadcasts.
 
 
 
