@@ -1,5 +1,5 @@
 # Chrysalis Token Whitepaper
-
+Authors<sup>1<sup>
 ## Introduction
 
 ### Background
@@ -152,4 +152,5 @@ Multiple metamorphoses does not require a proof; the mint will silently approve 
 The Chrysalis protocol specifies that each mint runs its own endpoints. These endpoints would compose a federated network which utilizes the same protocol but are not interconnected. Cross-mint transactions occur as simple exchanges of key pairs without the need of bridges. To prevent network congestion, mints can require a proof of work on all requests made to the endpoints. For divisible tokens, each output token can include its own proof of work to discourage frivolous token splitting. Transactors can also connect with each other to form a distributed hash table to share fraud proofs and prior settlement broadcasts.
 
 
-
+_________________________________________________________________________________________________________________________________________________________________________________
+1 Henry Zhou
